@@ -6,3 +6,5 @@ Usage: Run in command line and enter mode 1 to 4 and enter downsize ratio and es
 Example: The downscale of some sharp content to 0.1 of initial size with UserDefined2Resize(width/10, height/10, b=80, c=-20) creates about 12% overshoot.
 
 Use C++17 compiler to build.
+
+Software created mostly by Google AI chat bot.
