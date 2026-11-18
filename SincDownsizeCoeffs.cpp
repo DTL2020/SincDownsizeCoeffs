@@ -184,19 +184,20 @@ DoubleVec synthesize_input_model(double input_ov_pct, double s_ref) {
         return res;
     }
     double target_ov = -std::abs(input_ov_pct) / 100.0;
-    double b_avs = 78.0;
+    double b_avs = 80.0;
     double low = -65.0, high = 16.0;
     for (int iter = 0; iter < 45; ++iter) {
         double mid = 0.5 * (low + high);
         DoubleVec test_c(2, 0.0);
-        test_c.at(0) = avs_to_norm(b_avs);
+        double cur_b = 16.0 + (16.0 - mid) * 1.77;
+        test_c.at(0) = avs_to_norm(cur_b);
         test_c.at(1) = avs_to_norm(mid);
         DiscreteKernel dk = build_discrete_kernel_phased(16.0, test_c, s_ref, 0.5, 5);
         double ov = get_negative_overshoot(compute_step_response(dk.weights));
         if (ov > target_ov) high = mid;
         else low = mid;
     }
-    res.at(0) = avs_to_norm(b_avs);
+    res.at(0) = avs_to_norm(16.0 + (16.0 - 0.5 * (low + high)) * 1.77);
     res.at(1) = avs_to_norm(0.5 * (low + high));
     return res;
 }
@@ -239,8 +240,8 @@ double evaluate_loss(const DoubleVec& coeffs2, const OptimizationContext& ctx) {
     }
 
     double tail_sum = 0.0;
-    for (double x = 2.6; x <= 8.0; x += 0.2) { double w = ud_kernel(x, coeffs2, 8.0); tail_sum += w * w; }
-    return (total_loss / double(ctx.test_phases.size())) + 80.0 * tail_sum;
+    for (double x = 2.8; x <= 12.0; x += 0.1) { double w = ud_kernel(x, coeffs2, 12.0); tail_sum += (x * x) * (w * w); }
+    return (total_loss / double(ctx.test_phases.size())) + 250.0 * tail_sum;
 }
 
 struct SimplexVertex {
@@ -249,7 +250,7 @@ struct SimplexVertex {
     bool operator<(const SimplexVertex& other) const { return val < other.val; }
 };
 
-DoubleVec nelder_mead(const DoubleVec& start, const OptimizationContext& ctx, int max_iter = 2500) {
+DoubleVec nelder_mead(const DoubleVec& start, const OptimizationContext& ctx, int max_iter = 6000) {
     size_t n = start.size();
     std::vector<SimplexVertex> simplex(n + 1);
 
