@@ -227,10 +227,10 @@ double evaluate_loss(const DoubleVec& coeffs2, const OptimizationContext& ctx) {
 
         double err_ov = (ov - ctx.target_overshoot);
 
-        double phase_loss = 2500.0 * (err_ov * err_ov) +
+        double phase_loss = 25000.0 * (err_ov * err_ov) +
             1.8 * (rise_time * rise_time) +
             0.9 * (ov_width * ov_width) +
-            45.0 * ringing;
+            150.0 * ringing;
 
         if (ctx.target_overshoot > -0.002 && ov < -0.002) {
             phase_loss += 5000.0 * (ov * ov);
@@ -238,7 +238,9 @@ double evaluate_loss(const DoubleVec& coeffs2, const OptimizationContext& ctx) {
         total_loss += phase_loss;
     }
 
-    return total_loss / double(ctx.test_phases.size());
+    double tail_sum = 0.0;
+    for (double x = 2.6; x <= 8.0; x += 0.2) { double w = ud_kernel(x, coeffs2, 8.0); tail_sum += w * w; }
+    return (total_loss / double(ctx.test_phases.size())) + 80.0 * tail_sum;
 }
 
 struct SimplexVertex {
@@ -337,10 +339,10 @@ void print_ascii_step(const DoubleVec& step, double R_total) {
         if (idx < 0 || idx >= int(step.size())) continue;
         double px_pos = double(idx - center) / R_total;
         double v = step.at(idx);
-        int col_zero = 12;
-        int col_one = 52;
-        int p = std::clamp(int(std::round(col_zero + v * (col_one - col_zero))), 0, 64);
-        std::string line(65, ' ');
+        int col_zero = 8;
+        int col_one = 36;
+        int p = std::clamp(int(std::round(col_zero + v * (col_one - col_zero))), 0, 44);
+        std::string line(45, ' ');
         line.at(col_zero) = '|';
         line.at(col_one) = '|';
         line.at(p) = '*';
@@ -407,8 +409,8 @@ int main(int argc, char* argv[]) {
         double ph_arr[] = { 0.0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875 }; // phases array for non-integer resizing ratio overshoot amplitude evaluation
         for (int i = 0; i < 8; ++i) ctx.test_phases.push_back(ph_arr[i]);
     }
-    double b_starts[] = { 80.0, 95.0, 110.0 }; // starting b-params values
-    double c_starts[] = { -20.0, -10.0, 16.0 }; // starting c-params values
+    double b_starts[] = { 82.0, 90.0, 102.0 }; // starting b-params values
+    double c_starts[] = { -22.0, -16.0, 4.0 }; // starting c-params values
     DoubleVec best_res(2, 0.0);
     best_res.at(0) = avs_to_norm(80.0);
     best_res.at(1) = avs_to_norm(-20.0);
